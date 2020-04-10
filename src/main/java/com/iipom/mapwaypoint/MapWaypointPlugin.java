@@ -25,8 +25,8 @@ import java.util.List;
 @Slf4j
 @PluginDescriptor(
         name = "Map Waypoints",
-        description = "Adds waypoint functionality to the World Map via double-click",
-        tags = {"map", "waypoint"}
+        description = "Adds waypoint functionality to the world map (via double-click) with a direction overlay",
+        tags = {"map", "waypoint", "distance"}
 )
 public class MapWaypointPlugin extends Plugin {
 
