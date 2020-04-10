@@ -131,6 +131,7 @@ public class MapWaypointPlugin extends Plugin {
 
     @Override
     public void shutDown() {
+        worldMapPointManager.removeIf(x -> x == waypoint);
         waypoint = null;
         mouseManager.unregisterMouseListener(inputListener);
         overlayManager.remove(waypointArrowOverlay);
