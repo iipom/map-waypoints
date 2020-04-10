@@ -9,7 +9,7 @@ public interface MapWaypointConfig extends Config {
 
     @ConfigItem(
             keyName = "shiftClick",
-            name = "Shift-click waypoins",
+            name = "Shift-click waypoints",
             description = "Set and remove waypoints with shift-click"
     )
     default boolean shiftClick() { return true; }
