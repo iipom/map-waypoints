@@ -7,13 +7,17 @@ import java.awt.event.MouseEvent;
 public class MapWaypointInputListener implements MouseListener {
 
     private final MapWaypointPlugin plugin;
+    private final MapWaypointConfig config;
 
     @Inject
-    private MapWaypointInputListener(MapWaypointPlugin plugin) { this.plugin = plugin; }
+    private MapWaypointInputListener(MapWaypointPlugin plugin, MapWaypointConfig config) {
+        this.plugin = plugin;
+        this.config = config;
+    }
 
     @Override
     public MouseEvent mouseClicked(MouseEvent mouseEvent) {
-        if (mouseEvent.getButton() == 1 && (mouseEvent.getClickCount() == 2 || (plugin.getConfig().shiftClick() && mouseEvent.isShiftDown()))) {
+        if (mouseEvent.getButton() == 1 && (mouseEvent.getClickCount() == 2 || (config.shiftClick() && mouseEvent.isShiftDown()))) {
             plugin.mouseClicked(mouseEvent);
         }
 

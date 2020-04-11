@@ -45,7 +45,6 @@ public class MapWaypointPlugin extends Plugin {
     private Client client;
 
     @Inject
-    @Getter(AccessLevel.PACKAGE)
     private MapWaypointConfig config;
 
     @Inject
