@@ -55,7 +55,7 @@ public class WaypointArrowOverlay extends Overlay {
     private double calculateAngle(WorldPoint currentLocation, WorldPoint destination) {
         int dx = destination.getX() - currentLocation.getX();
         int dy = destination.getY() - currentLocation.getY();
-        setSteps(dx, dy);
+        steps = calculateSteps(dx, dy);
 
         double angle = Math.atan(Math.abs(((double) dy) / dx));
         if (dx == 0) {
@@ -72,18 +72,17 @@ public class WaypointArrowOverlay extends Overlay {
             }
         } else if (dx < 0 && dy > 0) {
             angle = Math.PI - angle;
-        } else if (dx < 0) {
+        } else if (dx < 0 && dy < 0) {
             angle += Math.PI;
-        } else if (dy < 0) {
+        } else if (dx > 0 && dy < 0) {
             angle = 2.0 * Math.PI - angle;
         }
 
         double clientAngle = (client.getMapAngle() / 2048.0) * 2.0 * Math.PI;
-
         return angle - clientAngle;
     }
 
-    private void setSteps(int dx, int dy) {
-        steps = (int) Math.round(Math.sqrt(dx * dx + dy * dy));
+    private int calculateSteps(int dx, int dy) {
+        return (int) Math.round(Math.sqrt(dx * dx + dy * dy));
     }
 }

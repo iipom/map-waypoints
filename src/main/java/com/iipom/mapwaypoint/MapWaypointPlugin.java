@@ -84,7 +84,6 @@ public class MapWaypointPlugin extends Plugin {
 
         for (WorldMapPoint worldMapPoint : worldMapPoints) {
             if (worldMapPoint.getClickbox() != null && worldMapPoint.getClickbox().getX() > 0 && worldMapPoint.getClickbox().getY() > 0) {
-                System.out.println("Passes");
                 int mapPointScreenX = (int) worldMapPoint.getClickbox().getX();
                 int mapPointScreenY = (int) worldMapPoint.getClickbox().getY();
                 int screenDx = mouseX - mapPointScreenX;
