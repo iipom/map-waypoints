@@ -21,11 +21,15 @@ public class WaypointArrowOverlay extends Overlay {
     private final PanelComponent panelComponent = new PanelComponent();
     private final TitleComponent stepsComponent = TitleComponent.builder().build();
 
+    private int steps;
+
     @Inject
     private WaypointArrowOverlay(Client client, MapWaypointPlugin plugin) {
         this.client = client;
         this.plugin = plugin;
         setPosition(OverlayPosition.TOP_CENTER);
+
+        steps = 0;
     }
 
     @Override
@@ -35,9 +39,23 @@ public class WaypointArrowOverlay extends Overlay {
         WorldPoint currentLocation = Objects.requireNonNull(client.getLocalPlayer()).getWorldLocation();
         WorldPoint destination = plugin.getWaypoint().getWorldPoint();
 
+        double angle = calculateAngle(currentLocation, destination);
+
+        BufferedImage rotatedImage = ImageUtil.rotateImage(ARROW_ICON, 2.0 * Math.PI - angle);
+        BufferedImage finalImage = rotatedImage.getSubimage(0, 40, 130, 50);
+        panelComponent.getChildren().clear();
+        panelComponent.getChildren().add(new ImageComponent(finalImage));
+
+        stepsComponent.setText("Steps: " + steps);
+        panelComponent.getChildren().add(stepsComponent);
+
+        return panelComponent.render(graphics);
+    }
+
+    private double calculateAngle(WorldPoint currentLocation, WorldPoint destination) {
         int dx = destination.getX() - currentLocation.getX();
         int dy = destination.getY() - currentLocation.getY();
-        int steps = (int) Math.round(Math.sqrt(dx * dx + dy * dy));
+        setSteps(dx, dy);
 
         double angle = Math.atan(Math.abs(((double) dy) / dx));
         if (dx == 0) {
@@ -54,23 +72,18 @@ public class WaypointArrowOverlay extends Overlay {
             }
         } else if (dx < 0 && dy > 0) {
             angle = Math.PI - angle;
-        } else if (dx < 0 && dy < 0) {
+        } else if (dx < 0) {
             angle += Math.PI;
-        } else if (dx > 0 && dy < 0) {
+        } else if (dy < 0) {
             angle = 2.0 * Math.PI - angle;
         }
 
         double clientAngle = (client.getMapAngle() / 2048.0) * 2.0 * Math.PI;
-        angle -= clientAngle;
 
-        BufferedImage rotatedImage = ImageUtil.rotateImage(ARROW_ICON, 2.0 * Math.PI - angle);
-        BufferedImage finalImage = rotatedImage.getSubimage(0, 40, 130, 50);
-        panelComponent.getChildren().clear();
-        panelComponent.getChildren().add(new ImageComponent(finalImage));
+        return angle - clientAngle;
+    }
 
-        stepsComponent.setText("Steps: " + steps);
-        panelComponent.getChildren().add(stepsComponent);
-
-        return panelComponent.render(graphics);
+    private void setSteps(int dx, int dy) {
+        steps = (int) Math.round(Math.sqrt(dx * dx + dy * dy));
     }
 }

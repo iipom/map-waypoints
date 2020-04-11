@@ -80,24 +80,11 @@ public class MapWaypointPlugin extends Plugin {
     }
 
     private void addWaypoint(List<WorldMapPoint> worldMapPoints, int mouseX, int mouseY) {
-        WorldMapPoint p1 = null;
-        WorldMapPoint p2 = null;
-        for (WorldMapPoint worldMapPoint : worldMapPoints) {
-            if (worldMapPoint.getClickbox() != null) {
-                if (p1 == null) {
-                    p1 = worldMapPoint;
-                }
-                else {
-                    p2 = worldMapPoint;
-                    break;
-                }
-            }
-        }
-
-        double scale = (p1.getClickbox().getX() - p2.getClickbox().getX()) / (p1.getWorldPoint().getX() - p2.getWorldPoint().getX());
+        double scale = calculateScale(worldMapPoints);
 
         for (WorldMapPoint worldMapPoint : worldMapPoints) {
             if (worldMapPoint.getClickbox() != null && worldMapPoint.getClickbox().getX() > 0 && worldMapPoint.getClickbox().getY() > 0) {
+                System.out.println("Passes");
                 int mapPointScreenX = (int) worldMapPoint.getClickbox().getX();
                 int mapPointScreenY = (int) worldMapPoint.getClickbox().getY();
                 int screenDx = mouseX - mapPointScreenX;
@@ -113,6 +100,24 @@ public class MapWaypointPlugin extends Plugin {
                 break;
             }
         }
+    }
+
+    private double calculateScale(List<WorldMapPoint> worldMapPoints) {
+        WorldMapPoint p1 = null;
+        WorldMapPoint p2 = null;
+        for (WorldMapPoint worldMapPoint : worldMapPoints) {
+            if (worldMapPoint.getClickbox() != null) {
+                if (p1 == null) {
+                    p1 = worldMapPoint;
+                }
+                else {
+                    p2 = worldMapPoint;
+                    break;
+                }
+            }
+        }
+
+        return (p1.getClickbox().getX() - p2.getClickbox().getX()) / (p1.getWorldPoint().getX() - p2.getWorldPoint().getX());
     }
 
     private List<WorldMapPoint> getWorldMapPoints() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
