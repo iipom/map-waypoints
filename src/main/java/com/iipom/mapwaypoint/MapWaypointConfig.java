@@ -13,4 +13,11 @@ public interface MapWaypointConfig extends Config {
             description = "Set and remove waypoints with shift-click"
     )
     default boolean shiftClick() { return true; }
+
+    @ConfigItem(
+            keyName = "drawTile",
+            name = "Draw waypoint ground tile",
+            description = "Render a ground tile in the world of your waypoint"
+    )
+    default boolean drawTile() { return true; }
 }

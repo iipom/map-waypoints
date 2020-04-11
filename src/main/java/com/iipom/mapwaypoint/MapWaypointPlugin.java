@@ -62,6 +62,9 @@ public class MapWaypointPlugin extends Plugin {
     @Inject
     private WaypointArrowOverlay waypointArrowOverlay;
 
+    @Inject
+    private WaypointTileOverlay waypointTileOverlay;
+
     public void mouseClicked(MouseEvent mouseEvent) {
         if (client.getRenderOverview().getWorldMapManager().isLoaded()) {
             if (waypoint != null && waypoint.getClickbox().contains(mouseEvent.getPoint())) {
@@ -130,6 +133,7 @@ public class MapWaypointPlugin extends Plugin {
         waypoint = null;
         mouseManager.registerMouseListener(inputListener);
         overlayManager.add(waypointArrowOverlay);
+        overlayManager.add(waypointTileOverlay);
     }
 
     @Override
@@ -138,6 +142,7 @@ public class MapWaypointPlugin extends Plugin {
         waypoint = null;
         mouseManager.unregisterMouseListener(inputListener);
         overlayManager.remove(waypointArrowOverlay);
+        overlayManager.remove(waypointTileOverlay);
     }
 
     @Provides
