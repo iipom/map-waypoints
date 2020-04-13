@@ -5,12 +5,15 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.Point;
+import net.runelite.api.RenderOverview;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.worldmap.WorldMapOverlay;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
@@ -18,10 +21,6 @@ import net.runelite.client.util.ImageUtil;
 import javax.inject.Inject;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @PluginDescriptor(
@@ -38,7 +37,7 @@ public class MapWaypointPlugin extends Plugin
     {
         WAYPOINT_ICON = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
         BufferedImage waypointIcon = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "waypoint.png");
-        WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 0, 0, null);
+        WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 8, 8, null);
     }
 
     @Getter(AccessLevel.PACKAGE)
@@ -58,6 +57,9 @@ public class MapWaypointPlugin extends Plugin
 
     @Inject
     private WorldMapPointManager worldMapPointManager;
+
+    @Inject
+    private WorldMapOverlay worldMapOverlay;
 
     @Inject
     private OverlayManager overlayManager;
@@ -80,94 +82,33 @@ public class MapWaypointPlugin extends Plugin
             }
             else
             {
-                try
-                {
-                    List<WorldMapPoint> worldMapPoints = getWorldMapPoints();
+                float zoom = client.getRenderOverview().getWorldMapZoom();
 
-                    addWaypoint(worldMapPoints, mouseEvent.getX(), mouseEvent.getY());
-                }
-                catch (Exception e)
+                if (zoom == 0.0)
                 {
-                    e.printStackTrace();
+                    return;
                 }
+
+                WorldPoint destination = calculateMapPoint(client.getRenderOverview(), zoom);
+
+                worldMapPointManager.removeIf(x -> x == waypoint);
+                waypoint = new WorldMapPoint(destination, WAYPOINT_ICON);
+                worldMapPointManager.add(waypoint);
             }
         }
     }
 
-    private void addWaypoint(List<WorldMapPoint> worldMapPoints, int mouseX, int mouseY)
+    private WorldPoint calculateMapPoint(RenderOverview renderOverview, float zoom)
     {
-        worldMapPointManager.removeIf(x -> x == waypoint);
+        WorldPoint mapPoint = new WorldPoint(renderOverview.getWorldMapPosition().getX(), renderOverview.getWorldMapPosition().getY(), 0);
 
-        double scale = calculateScale(worldMapPoints);
+        Point middle = worldMapOverlay.mapWorldPointToGraphicsPoint(mapPoint);
+        Point mouse = client.getMouseCanvasPosition();
 
-        if (scale == 0.0)
-        {
-            return;
-        }
+        int dx = (int) ((mouse.getX() - middle.getX()) / zoom);
+        int dy = (int) ((-(mouse.getY() - middle.getY())) / zoom);
 
-        WorldMapPoint worldMapPoint = worldMapPoints.stream()
-                .filter(x -> (x.getClickbox() != null && x.getClickbox().getX() > 0 && x.getClickbox().getY() > 0))
-                .findAny()
-                .get();
-
-        WorldPoint destination = calculateMapPoint(worldMapPoint, mouseX, mouseY, scale);
-
-        waypoint = new WorldMapPoint(destination, WAYPOINT_ICON);
-
-        worldMapPointManager.add(waypoint);
-    }
-
-    private double calculateScale(List<WorldMapPoint> worldMapPoints)
-    {
-        WorldMapPoint p1 = null;
-        WorldMapPoint p2 = null;
-
-        for (WorldMapPoint worldMapPoint : worldMapPoints)
-        {
-            if (worldMapPoint.getClickbox() != null)
-            {
-                if (p1 == null)
-                {
-                    p1 = worldMapPoint;
-                }
-                else
-                {
-                    p2 = worldMapPoint;
-                    break;
-                }
-            }
-        }
-
-        if (p1 == null || p2 == null)
-        {
-            return 0.0;
-        }
-
-        return (p1.getClickbox().getX() - p2.getClickbox().getX()) / (p1.getWorldPoint().getX() - p2.getWorldPoint().getX());
-    }
-
-    private WorldPoint calculateMapPoint(WorldMapPoint worldMapPoint, int mouseX, int mouseY, double scale)
-    {
-        int mapPointScreenX = (int) worldMapPoint.getClickbox().getX();
-        int mapPointScreenY = (int) worldMapPoint.getClickbox().getY();
-
-        int screenDx = mouseX - mapPointScreenX;
-        int screenDy = -(mouseY - mapPointScreenY);
-
-        int dx = (int) (screenDx / scale);
-        int dy = (int) (screenDy / scale);
-
-        return worldMapPoint.getWorldPoint().dx(dx).dy(dy);
-    }
-
-    // This method sucks
-    private List<WorldMapPoint> getWorldMapPoints() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
-    {
-        Method getWorldMapPoints = worldMapPointManager.getClass().getDeclaredMethod("getWorldMapPoints");
-
-        getWorldMapPoints.setAccessible(true);
-
-        return (List<WorldMapPoint>) getWorldMapPoints.invoke(worldMapPointManager);
+        return mapPoint.dx(dx).dy(dy);
     }
 
     @Override
@@ -177,6 +118,7 @@ public class MapWaypointPlugin extends Plugin
 
         overlayManager.add(waypointArrowOverlay);
         overlayManager.add(waypointTileOverlay);
+
         waypoint = null;
     }
 
