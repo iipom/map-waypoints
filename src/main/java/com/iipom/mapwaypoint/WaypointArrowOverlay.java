@@ -3,6 +3,7 @@ package com.iipom.mapwaypoint;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.*;
@@ -12,22 +13,33 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
+import static net.runelite.api.SpriteID.MINIMAP_DESTINATION_FLAG;
+
 public class WaypointArrowOverlay extends Overlay
 {
-
-    private static final BufferedImage ARROW_ICON = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "arrow.png");
-
     private final Client client;
     private final MapWaypointPlugin plugin;
+    private final SpriteManager spriteManager;
     private final PanelComponent panelComponent = new PanelComponent();
     private final TitleComponent stepsComponent = TitleComponent.builder().build();
 
+    private BufferedImage ARROW_ICON;
+
     @Inject
-    private WaypointArrowOverlay(Client client, MapWaypointPlugin plugin)
+    private WaypointArrowOverlay(Client client, MapWaypointPlugin plugin, SpriteManager spriteManager)
     {
+        ARROW_ICON = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+        setPosition(OverlayPosition.TOP_CENTER);
         this.client = client;
         this.plugin = plugin;
-        setPosition(OverlayPosition.TOP_CENTER);
+        this.spriteManager = spriteManager;
+
+        this.spriteManager.getSpriteAsync(MINIMAP_DESTINATION_FLAG, 1, sprite ->
+        {
+            ARROW_ICON = ImageUtil.rotateImage(sprite, 3 * Math.PI / 2);
+        });
+
+
     }
 
     @Override
@@ -63,11 +75,11 @@ public class WaypointArrowOverlay extends Overlay
 
     private BufferedImage calculateImageRotation(WorldPoint currentLocation, WorldPoint destination, int textLen)
     {
-        final double angle = calculateAngle(currentLocation, destination);
+        double angle = calculateAngle(currentLocation, destination);
         final int dx = (textLen - ARROW_ICON.getWidth()) / 2;
 
         final BufferedImage rotatedImage = ImageUtil.rotateImage(ARROW_ICON, 2.0 * Math.PI - angle);
-        final BufferedImage finalImage = new BufferedImage(rotatedImage.getWidth() + dx, 27, BufferedImage.TYPE_INT_ARGB);
+        final BufferedImage finalImage = new BufferedImage(rotatedImage.getWidth() + dx, ARROW_ICON.getHeight() + 2, BufferedImage.TYPE_INT_ARGB);
         finalImage.getGraphics().drawImage(rotatedImage, dx, 0, null);
 
         return finalImage;
@@ -78,7 +90,7 @@ public class WaypointArrowOverlay extends Overlay
         final int dx = destination.getX() - currentLocation.getX();
         final int dy = destination.getY() - currentLocation.getY();
 
-        final double angle = Math.atan2(dy, dx);
+        double angle = Math.atan2(dy, dx);
         final double clientAngle = (client.getMapAngle() / 2048.0) * 2.0 * Math.PI;
 
         return angle - clientAngle;
