@@ -8,6 +8,8 @@ import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.RenderOverview;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
@@ -19,6 +21,7 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
@@ -30,13 +33,12 @@ import java.awt.image.BufferedImage;
 )
 public class MapWaypointPlugin extends Plugin
 {
-
     private static final BufferedImage WAYPOINT_ICON;
 
     static
     {
         WAYPOINT_ICON = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
-        BufferedImage waypointIcon = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "waypoint.png");
+        final BufferedImage waypointIcon = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "waypoint.png");
         WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 8, 8, null);
     }
 
@@ -70,26 +72,31 @@ public class MapWaypointPlugin extends Plugin
     @Inject
     private WaypointTileOverlay waypointTileOverlay;
 
-    public void mouseClicked(MouseEvent mouseEvent)
+    public void mouseClicked()
     {
-        if (client.getRenderOverview().getWorldMapManager().isLoaded())
+        final Point mousePos = client.getMouseCanvasPosition();
+        final Widget view = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+
+        if (view == null)
         {
-            if (waypoint != null && waypoint.getClickbox().contains(mouseEvent.getPoint()))
+            return;
+        }
+
+        final Rectangle worldMapDisplay = view.getBounds();
+
+        if (worldMapDisplay != null && worldMapDisplay.contains(mousePos.getX(), mousePos.getY()))
+        {
+            if (waypoint != null && waypoint.getClickbox().contains(mousePos.getX(), mousePos.getY()))
             {
                 worldMapPointManager.remove(waypoint);
-
                 waypoint = null;
             }
             else
             {
-                float zoom = client.getRenderOverview().getWorldMapZoom();
+                final RenderOverview renderOverview = client.getRenderOverview();
 
-                if (zoom == 0.0)
-                {
-                    return;
-                }
-
-                WorldPoint destination = calculateMapPoint(client.getRenderOverview(), zoom);
+                final float zoom = renderOverview.getWorldMapZoom();
+                final WorldPoint destination = calculateMapPoint(renderOverview, mousePos, zoom);
 
                 worldMapPointManager.removeIf(x -> x == waypoint);
                 waypoint = new WorldMapPoint(destination, WAYPOINT_ICON);
@@ -98,15 +105,13 @@ public class MapWaypointPlugin extends Plugin
         }
     }
 
-    private WorldPoint calculateMapPoint(RenderOverview renderOverview, float zoom)
+    private WorldPoint calculateMapPoint(RenderOverview renderOverview, Point mousePos, float zoom)
     {
-        WorldPoint mapPoint = new WorldPoint(renderOverview.getWorldMapPosition().getX(), renderOverview.getWorldMapPosition().getY(), 0);
+        final WorldPoint mapPoint = new WorldPoint(renderOverview.getWorldMapPosition().getX(), renderOverview.getWorldMapPosition().getY(), 0);
+        final Point middle = worldMapOverlay.mapWorldPointToGraphicsPoint(mapPoint);
 
-        Point middle = worldMapOverlay.mapWorldPointToGraphicsPoint(mapPoint);
-        Point mouse = client.getMouseCanvasPosition();
-
-        int dx = (int) ((mouse.getX() - middle.getX()) / zoom);
-        int dy = (int) ((-(mouse.getY() - middle.getY())) / zoom);
+        final int dx = (int) ((mousePos.getX() - middle.getX()) / zoom);
+        final int dy = (int) ((-(mousePos.getY() - middle.getY())) / zoom);
 
         return mapPoint.dx(dx).dy(dy);
     }
