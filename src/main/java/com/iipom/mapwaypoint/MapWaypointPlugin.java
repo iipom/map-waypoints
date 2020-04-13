@@ -37,9 +37,9 @@ public class MapWaypointPlugin extends Plugin
 
     static
     {
-        WAYPOINT_ICON = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
+        WAYPOINT_ICON = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
         final BufferedImage waypointIcon = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "waypoint.png");
-        WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 8, 8, null);
+        WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 0, 0, null);
     }
 
     @Getter(AccessLevel.PACKAGE)
