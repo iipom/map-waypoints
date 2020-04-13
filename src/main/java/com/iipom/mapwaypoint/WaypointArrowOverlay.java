@@ -38,19 +38,19 @@ public class WaypointArrowOverlay extends Overlay
             return null;
         }
 
-        Player player = client.getLocalPlayer();
+        final Player player = client.getLocalPlayer();
         if (player == null)
         {
             return null;
         }
 
-        WorldPoint currentLocation = player.getWorldLocation();
-        WorldPoint destination = plugin.getWaypoint().getWorldPoint();
+        final WorldPoint currentLocation = player.getWorldLocation();
+        final WorldPoint destination = plugin.getWaypoint().getWorldPoint();
 
-        int distance = currentLocation.distanceTo(destination);
-        String steps = "Steps: " + distance;
+        final int distance = currentLocation.distanceTo(destination);
+        final String steps = "Steps: " + distance;
 
-        BufferedImage arrow = calculateImageRotation(currentLocation, destination, graphics.getFontMetrics().stringWidth(steps));
+        final BufferedImage arrow = calculateImageRotation(currentLocation, destination, graphics.getFontMetrics().stringWidth(steps));
 
         stepsComponent.setText(steps);
         panelComponent.getChildren().clear();
@@ -63,11 +63,11 @@ public class WaypointArrowOverlay extends Overlay
 
     private BufferedImage calculateImageRotation(WorldPoint currentLocation, WorldPoint destination, int textLen)
     {
-        double angle = calculateAngle(currentLocation, destination);
-        int dx = (textLen - ARROW_ICON.getWidth()) / 2;
+        final double angle = calculateAngle(currentLocation, destination);
+        final int dx = (textLen - ARROW_ICON.getWidth()) / 2;
 
-        BufferedImage rotatedImage = ImageUtil.rotateImage(ARROW_ICON, 2.0 * Math.PI - angle);
-        BufferedImage finalImage = new BufferedImage(rotatedImage.getWidth() + dx, 27, BufferedImage.TYPE_INT_ARGB);
+        final BufferedImage rotatedImage = ImageUtil.rotateImage(ARROW_ICON, 2.0 * Math.PI - angle);
+        final BufferedImage finalImage = new BufferedImage(rotatedImage.getWidth() + dx, 27, BufferedImage.TYPE_INT_ARGB);
         finalImage.getGraphics().drawImage(rotatedImage, dx, 0, null);
 
         return finalImage;
@@ -75,11 +75,11 @@ public class WaypointArrowOverlay extends Overlay
 
     private double calculateAngle(WorldPoint currentLocation, WorldPoint destination)
     {
-        int dx = destination.getX() - currentLocation.getX();
-        int dy = destination.getY() - currentLocation.getY();
+        final int dx = destination.getX() - currentLocation.getX();
+        final int dy = destination.getY() - currentLocation.getY();
 
-        double angle = Math.atan2(dy, dx);
-        double clientAngle = (client.getMapAngle() / 2048.0) * 2.0 * Math.PI;
+        final double angle = Math.atan2(dy, dx);
+        final double clientAngle = (client.getMapAngle() / 2048.0) * 2.0 * Math.PI;
 
         return angle - clientAngle;
     }

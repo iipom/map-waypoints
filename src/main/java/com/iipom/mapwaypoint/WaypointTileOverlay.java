@@ -61,25 +61,25 @@ public class WaypointTileOverlay extends Overlay
 
     private void drawTile(Graphics2D graphics, WorldPoint waypoint)
     {
-        Player player = client.getLocalPlayer();
+        final Player player = client.getLocalPlayer();
         if (player == null)
         {
             return;
         }
 
-        WorldPoint playerLocation = player.getWorldLocation();
+        final WorldPoint playerLocation = player.getWorldLocation();
         if (waypoint.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
         {
             return;
         }
 
-        LocalPoint lp = LocalPoint.fromWorld(client, waypoint);
+        final LocalPoint lp = LocalPoint.fromWorld(client, waypoint);
         if (lp == null)
         {
             return;
         }
 
-        Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+        final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
         if (poly == null)
         {
             return;
