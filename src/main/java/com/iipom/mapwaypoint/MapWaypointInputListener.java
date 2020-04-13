@@ -4,20 +4,24 @@ import net.runelite.client.input.MouseListener;
 import javax.inject.Inject;
 import java.awt.event.MouseEvent;
 
-public class MapWaypointInputListener implements MouseListener {
+public class MapWaypointInputListener implements MouseListener
+{
 
     private final MapWaypointPlugin plugin;
     private final MapWaypointConfig config;
 
     @Inject
-    private MapWaypointInputListener(MapWaypointPlugin plugin, MapWaypointConfig config) {
+    private MapWaypointInputListener(MapWaypointPlugin plugin, MapWaypointConfig config)
+    {
         this.plugin = plugin;
         this.config = config;
     }
 
     @Override
-    public MouseEvent mouseClicked(MouseEvent mouseEvent) {
-        if (mouseEvent.getButton() == 1 && (mouseEvent.getClickCount() == 2 || (config.shiftClick() && mouseEvent.isShiftDown()))) {
+    public MouseEvent mouseClicked(MouseEvent mouseEvent)
+    {
+        if (mouseEvent.getButton() == 1 && (mouseEvent.getClickCount() == 2 || (config.shiftClick() && mouseEvent.isShiftDown())))
+        {
             plugin.mouseClicked(mouseEvent);
         }
 
