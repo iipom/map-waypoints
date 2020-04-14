@@ -13,13 +13,12 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-import static net.runelite.api.SpriteID.MINIMAP_DESTINATION_FLAG;
+import static net.runelite.api.SpriteID.MINIMAP_GUIDE_ARROW_YELLOW;
 
 public class WaypointArrowOverlay extends Overlay
 {
     private final Client client;
     private final MapWaypointPlugin plugin;
-    private final SpriteManager spriteManager;
     private final PanelComponent panelComponent = new PanelComponent();
     private final TitleComponent stepsComponent = TitleComponent.builder().build();
 
@@ -28,18 +27,14 @@ public class WaypointArrowOverlay extends Overlay
     @Inject
     private WaypointArrowOverlay(Client client, MapWaypointPlugin plugin, SpriteManager spriteManager)
     {
-        ARROW_ICON = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
         setPosition(OverlayPosition.TOP_CENTER);
         this.client = client;
         this.plugin = plugin;
-        this.spriteManager = spriteManager;
 
-        this.spriteManager.getSpriteAsync(MINIMAP_DESTINATION_FLAG, 1, sprite ->
+        spriteManager.getSpriteAsync(MINIMAP_GUIDE_ARROW_YELLOW, 1, sprite ->
         {
             ARROW_ICON = ImageUtil.rotateImage(sprite, 3 * Math.PI / 2);
         });
-
-
     }
 
     @Override
@@ -90,7 +85,7 @@ public class WaypointArrowOverlay extends Overlay
         final int dx = destination.getX() - currentLocation.getX();
         final int dy = destination.getY() - currentLocation.getY();
 
-        double angle = Math.atan2(dy, dx);
+        final double angle = Math.atan2(dy, dx);
         final double clientAngle = (client.getMapAngle() / 2048.0) * 2.0 * Math.PI;
 
         return angle - clientAngle;
