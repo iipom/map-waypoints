@@ -17,12 +17,12 @@ import static net.runelite.api.SpriteID.MINIMAP_GUIDE_ARROW_YELLOW;
 
 public class WaypointArrowOverlay extends Overlay
 {
+    private BufferedImage ARROW_ICON;
+
     private final Client client;
     private final MapWaypointPlugin plugin;
     private final PanelComponent panelComponent = new PanelComponent();
     private final TitleComponent stepsComponent = TitleComponent.builder().build();
-
-    private BufferedImage ARROW_ICON;
 
     @Inject
     private WaypointArrowOverlay(Client client, MapWaypointPlugin plugin, SpriteManager spriteManager)
