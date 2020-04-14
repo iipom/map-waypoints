@@ -2,6 +2,7 @@ package com.iipom.mapwaypoint;
 
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
+import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -13,6 +14,7 @@ import java.awt.*;
 
 public class WaypointMinimapOverlay extends Overlay
 {
+    private static final int MAX_DRAW_DISTANCE = 16;
     private static final int TILE_WIDTH = 4;
     private static final int TILE_HEIGHT = 4;
     private static final Color TILE_COLOR = new Color(0, 201, 198);
@@ -48,6 +50,17 @@ public class WaypointMinimapOverlay extends Overlay
 
     private void drawOnMinimap(Graphics2D graphics, WorldPoint point)
     {
+        Player player = client.getLocalPlayer();
+        if (player == null)
+        {
+            return;
+        }
+
+        if (point.distanceTo(player.getWorldLocation()) >= MAX_DRAW_DISTANCE)
+        {
+            return;
+        }
+
         LocalPoint lp = LocalPoint.fromWorld(client, point);
         if (lp == null)
         {
