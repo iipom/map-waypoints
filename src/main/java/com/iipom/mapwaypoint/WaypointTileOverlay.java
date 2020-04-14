@@ -6,25 +6,15 @@ import net.runelite.api.Player;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
-import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 public class WaypointTileOverlay extends Overlay
 {
 
     private static final int MAX_DRAW_DISTANCE = 32;
     private static final Color TILE_COLOR = new Color(0, 201, 198);
-    private static final BufferedImage WAYPOINT_ICON;
-
-    static
-    {
-        WAYPOINT_ICON = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-        final BufferedImage waypointIcon = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "waypoint.png");
-        WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 0, 0, null);
-    }
 
     private final Client client;
     private final MapWaypointPlugin plugin;
@@ -44,16 +34,14 @@ public class WaypointTileOverlay extends Overlay
     @Override
     public Dimension render(Graphics2D graphics)
     {
-        if (plugin.getWaypoint() == null || !config.drawTile())
+        if (plugin.getWaypoint() != null && config.drawTile())
         {
-            return null;
-        }
+            final WorldPoint waypoint = plugin.getWaypoint().getWorldPoint();
 
-        final WorldPoint waypoint = plugin.getWaypoint().getWorldPoint();
-
-        if (client.getPlane() == waypoint.getPlane())
-        {
-            drawTile(graphics, waypoint);
+            if (client.getPlane() == waypoint.getPlane())
+            {
+                drawTile(graphics, waypoint);
+            }
         }
 
         return null;
@@ -85,6 +73,6 @@ public class WaypointTileOverlay extends Overlay
             return;
         }
 
-        OverlayUtil.renderTileOverlay(client, graphics, lp, WAYPOINT_ICON, TILE_COLOR);
+        OverlayUtil.renderPolygon(graphics, poly, TILE_COLOR);
     }
 }
