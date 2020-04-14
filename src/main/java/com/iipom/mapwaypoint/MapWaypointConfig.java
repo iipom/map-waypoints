@@ -12,12 +12,28 @@ public interface MapWaypointConfig extends Config {
             name = "Shift-click waypoints",
             description = "Set and remove waypoints with shift-click"
     )
-    default boolean shiftClick() { return true; }
+    default boolean shiftClick()
+    {
+        return true;
+    }
 
     @ConfigItem(
             keyName = "drawTile",
-            name = "Draw waypoint ground tile",
-            description = "Render a ground tile in the world of your waypoint"
+            name = "Draw waypoint on ground",
+            description = "Draw an indicator of your waypoint on the ground"
     )
-    default boolean drawTile() { return true; }
+    default boolean drawTile()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "drawMinimap",
+            name = "Draw waypoint on minimap",
+            description = "Draw an indicator of your waypoint on the minimap"
+    )
+    default boolean drawMinimap()
+    {
+        return true;
+    }
 }

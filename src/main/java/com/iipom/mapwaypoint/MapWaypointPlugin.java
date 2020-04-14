@@ -22,7 +22,6 @@ import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 @Slf4j
@@ -68,6 +67,9 @@ public class MapWaypointPlugin extends Plugin
 
     @Inject
     private WaypointArrowOverlay waypointArrowOverlay;
+
+    @Inject
+    private WaypointMinimapOverlay waypointMinimapOverlay;
 
     @Inject
     private WaypointTileOverlay waypointTileOverlay;
@@ -122,6 +124,7 @@ public class MapWaypointPlugin extends Plugin
         mouseManager.registerMouseListener(inputListener);
 
         overlayManager.add(waypointArrowOverlay);
+        overlayManager.add(waypointMinimapOverlay);
         overlayManager.add(waypointTileOverlay);
 
         waypoint = null;
@@ -133,6 +136,7 @@ public class MapWaypointPlugin extends Plugin
         mouseManager.unregisterMouseListener(inputListener);
 
         overlayManager.remove(waypointArrowOverlay);
+        overlayManager.remove(waypointMinimapOverlay);
         overlayManager.remove(waypointTileOverlay);
 
         worldMapPointManager.removeIf(x -> x == waypoint);
