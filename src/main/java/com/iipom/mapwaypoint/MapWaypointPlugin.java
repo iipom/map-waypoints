@@ -4,13 +4,16 @@ import com.google.inject.Provides;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
+import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.api.RenderOverview;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.MenuOpened;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -23,6 +26,7 @@ import net.runelite.client.util.ImageUtil;
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
 @Slf4j
 @PluginDescriptor(
@@ -32,6 +36,13 @@ import java.awt.image.BufferedImage;
 )
 public class MapWaypointPlugin extends Plugin
 {
+    private static final String WALK_HERE = "Walk here";
+    private static final String FOCUS = "Focus";
+    private static final String CLOSE = "Close";
+    private static final String SET_WAYPOINT = "Set Waypoint";
+    private static final String FOCUS_WAYPOINT = "Focus Waypoint";
+    private static final String REMOVE_WAYPOINT = "Remove Waypoint";
+
     private static final BufferedImage WAYPOINT_ICON;
 
     static
@@ -40,6 +51,8 @@ public class MapWaypointPlugin extends Plugin
         final BufferedImage waypointIcon = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "waypoint.png");
         WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 0, 0, null);
     }
+
+    private Point lastMenuOpenedPoint;
 
     @Getter(AccessLevel.PACKAGE)
     private WorldMapPoint waypoint;
@@ -76,46 +89,110 @@ public class MapWaypointPlugin extends Plugin
 
     public void mouseClicked()
     {
-        final Point mousePos = client.getMouseCanvasPosition();
-        final Widget view = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
-
-        if (view == null)
+        if (isMouseInWorldMap())
         {
-            return;
-        }
+            final Point mousePos = client.getMouseCanvasPosition();
 
-        final Rectangle worldMapDisplay = view.getBounds();
-
-        if (worldMapDisplay != null && worldMapDisplay.contains(mousePos.getX(), mousePos.getY()))
-        {
             if (waypoint != null && waypoint.getClickbox().contains(mousePos.getX(), mousePos.getY()))
             {
-                worldMapPointManager.remove(waypoint);
-                waypoint = null;
+                removeWaypoint();
             }
             else
             {
-                final RenderOverview renderOverview = client.getRenderOverview();
-
-                final float zoom = renderOverview.getWorldMapZoom();
-                final WorldPoint destination = calculateMapPoint(renderOverview, mousePos, zoom);
-
-                worldMapPointManager.removeIf(x -> x == waypoint);
-                waypoint = new WorldMapPoint(destination, WAYPOINT_ICON);
-                worldMapPointManager.add(waypoint);
+                setWaypoint(mousePos);
             }
         }
     }
 
-    private WorldPoint calculateMapPoint(RenderOverview renderOverview, Point mousePos, float zoom)
+    @Subscribe
+    public void onMenuOpened(MenuOpened event)
     {
-        final WorldPoint mapPoint = new WorldPoint(renderOverview.getWorldMapPosition().getX(), renderOverview.getWorldMapPosition().getY(), 0);
-        final Point middle = worldMapOverlay.mapWorldPointToGraphicsPoint(mapPoint);
+        if (isMouseInWorldMap())
+        {
+            lastMenuOpenedPoint = client.getMouseCanvasPosition();
+        }
+    }
 
-        final int dx = (int) ((mousePos.getX() - middle.getX()) / zoom);
-        final int dy = (int) ((-(mousePos.getY() - middle.getY())) / zoom);
+    @Subscribe
+    public void onMenuEntryAdded(MenuEntryAdded event)
+    {
+        if (waypoint != null)
+        {
+            if (event.getOption().equals(WALK_HERE))
+            {
+                final Tile selectedSceneTile = client.getSelectedSceneTile();
+                if (selectedSceneTile == null)
+                {
+                    return;
+                }
 
-        return mapPoint.dx(dx).dy(dy);
+                if (selectedSceneTile.getWorldLocation().equals(waypoint.getWorldPoint()))
+                {
+                    addMenuEntry(event, REMOVE_WAYPOINT);
+                    return;
+                }
+            }
+        }
+
+        if (isMouseInWorldMap())
+        {
+            if (event.getOption().equals(WALK_HERE))
+            {
+                return;
+            }
+
+            final Point mousePos = client.getMouseCanvasPosition();
+            try
+            {
+                if (waypoint != null && waypoint.getClickbox().contains(mousePos.getX(), mousePos.getY()))
+                {
+                    if (!event.getOption().equals(FOCUS) && !event.getOption().equals(CLOSE))
+                    {
+                        addMenuEntry(event, REMOVE_WAYPOINT);
+                        addMenuEntry(event, FOCUS_WAYPOINT);
+                    }
+                }
+                else if (!event.getOption().equals(FOCUS) && !event.getOption().equals(CLOSE))
+                {
+                    addMenuEntry(event, SET_WAYPOINT);
+                }
+            }
+            catch (NullPointerException e)
+            {
+                // Nothing wrong actually happened here, this only ever gets thrown sometimes when you add a waypoint and it checks its clickbox while being created
+                // I added the try...catch so the users console doesn't get output from it because I'm not sure how to fix it
+                // I'm assuming it has something to do with the mouse already being positioned over the waypoint when it's created and the way Runelite/Runescape handles menu creation
+            }
+        }
+    }
+
+    @Subscribe
+    public void onMenuOptionClicked(MenuOptionClicked event)
+    {
+        if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() || !client.isMenuOpen())
+        {
+            return;
+        }
+
+        if (event.getMenuOption().equals(SET_WAYPOINT))
+        {
+            setWaypoint(lastMenuOpenedPoint);
+        }
+        else if (event.getMenuOption().equals(REMOVE_WAYPOINT))
+        {
+            if (waypoint != null)
+            {
+                removeWaypoint();
+            }
+        }
+        else if (event.getMenuOption().equals(FOCUS_WAYPOINT))
+        {
+            if (waypoint != null)
+            {
+                client.getRenderOverview().setWorldMapPositionTarget(waypoint.getWorldPoint());
+                playSoundEffect();
+            }
+        }
     }
 
     @Override
@@ -142,6 +219,75 @@ public class MapWaypointPlugin extends Plugin
         worldMapPointManager.removeIf(x -> x == waypoint);
 
         waypoint = null;
+    }
+
+    private void setWaypoint(final Point mousePos)
+    {
+        final RenderOverview renderOverview = client.getRenderOverview();
+
+        final float zoom = renderOverview.getWorldMapZoom();
+        final WorldPoint destination = calculateMapPoint(renderOverview, mousePos, zoom);
+
+        worldMapPointManager.removeIf(x -> x == waypoint);
+        waypoint = new WorldMapPoint(destination, WAYPOINT_ICON);
+        waypoint.setTarget(waypoint.getWorldPoint());
+        waypoint.setJumpOnClick(true);
+        worldMapPointManager.add(waypoint);
+
+        playSoundEffect();
+    }
+
+    private void removeWaypoint()
+    {
+        worldMapPointManager.remove(waypoint);
+        waypoint = null;
+
+        playSoundEffect();
+    }
+
+    private WorldPoint calculateMapPoint(RenderOverview renderOverview, Point mousePos, float zoom)
+    {
+        final WorldPoint mapPoint = new WorldPoint(renderOverview.getWorldMapPosition().getX(), renderOverview.getWorldMapPosition().getY(), 0);
+        final Point middle = worldMapOverlay.mapWorldPointToGraphicsPoint(mapPoint);
+
+        final int dx = (int) ((mousePos.getX() - middle.getX()) / zoom);
+        final int dy = (int) ((-(mousePos.getY() - middle.getY())) / zoom);
+
+        return mapPoint.dx(dx).dy(dy);
+    }
+
+    private boolean isMouseInWorldMap()
+    {
+        final Point mousePos = client.getMouseCanvasPosition();
+        final Widget view = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+        if (view == null)
+        {
+            return false;
+        }
+
+        final Rectangle worldMapBounds = view.getBounds();
+        return worldMapBounds.contains(mousePos.getX(), mousePos.getY());
+    }
+
+    private void addMenuEntry(MenuEntryAdded event, String option)
+    {
+        MenuEntry[] menuEntries = client.getMenuEntries();
+        menuEntries = Arrays.copyOf(menuEntries, menuEntries.length + 1);
+        final MenuEntry menuEntry = menuEntries[menuEntries.length - 1] = new MenuEntry();
+
+        menuEntry.setOption(option);
+        menuEntry.setTarget(event.getTarget());
+        menuEntry.setType(MenuAction.RUNELITE.getId());
+
+        client.setMenuEntries(menuEntries);
+    }
+
+    private void playSoundEffect()
+    {
+        if (config.playSoundEffect())
+        {
+            client.playSoundEffect(SoundEffectID.UI_BOOP);
+        }
     }
 
     @Provides

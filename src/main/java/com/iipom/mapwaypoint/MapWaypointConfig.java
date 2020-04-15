@@ -18,6 +18,16 @@ public interface MapWaypointConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "playSoundEffect",
+            name = "Play sound effect",
+            description = "Play sound effect when setting, removing, and focusing a waypoint"
+    )
+    default boolean playSoundEffect()
+    {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "drawTile",
             name = "Draw waypoint on ground",
             description = "Draw an indicator of your waypoint on the ground"
