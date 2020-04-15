@@ -3,6 +3,7 @@ package com.iipom.mapwaypoint;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
+import net.runelite.api.Scene;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
@@ -13,7 +14,7 @@ import java.awt.*;
 public class WaypointTileOverlay extends Overlay
 {
 
-    private static final int MAX_DRAW_DISTANCE = 32;
+    private static final int DEFAULT_DRAW_DISTANCE = 25;
     private static final Color TILE_COLOR = new Color(0, 201, 198);
 
     private final Client client;
@@ -55,8 +56,10 @@ public class WaypointTileOverlay extends Overlay
             return;
         }
 
+        final int drawDistance = client.getScene().getDrawDistance() != 0 ? client.getScene().getDrawDistance() : DEFAULT_DRAW_DISTANCE;
+
         final WorldPoint playerLocation = player.getWorldLocation();
-        if (waypoint.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
+        if (waypoint.distanceTo(playerLocation) >= drawDistance)
         {
             return;
         }
