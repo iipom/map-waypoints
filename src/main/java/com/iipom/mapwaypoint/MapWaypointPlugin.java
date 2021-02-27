@@ -174,24 +174,17 @@ public class MapWaypointPlugin extends Plugin
             return;
         }
 
-        if (event.getMenuOption().equals(SET_WAYPOINT))
+        switch (event.getMenuOption())
         {
-            setWaypoint(lastMenuOpenedPoint);
-        }
-        else if (event.getMenuOption().equals(REMOVE_WAYPOINT))
-        {
-            if (waypoint != null)
-            {
+            case SET_WAYPOINT:
+                setWaypoint(lastMenuOpenedPoint);
+                break;
+            case REMOVE_WAYPOINT:
                 removeWaypoint();
-            }
-        }
-        else if (event.getMenuOption().equals(FOCUS_WAYPOINT))
-        {
-            if (waypoint != null)
-            {
-                client.getRenderOverview().setWorldMapPositionTarget(waypoint.getWorldPoint());
-                playSoundEffect();
-            }
+                break;
+            case FOCUS_WAYPOINT:
+                focusWaypoint();
+                break;
         }
     }
 
@@ -239,10 +232,22 @@ public class MapWaypointPlugin extends Plugin
 
     private void removeWaypoint()
     {
-        worldMapPointManager.remove(waypoint);
-        waypoint = null;
+        if (waypoint != null)
+        {
+            worldMapPointManager.remove(waypoint);
+            waypoint = null;
 
-        playSoundEffect();
+            playSoundEffect();
+        }
+    }
+
+    private void focusWaypoint()
+    {
+        if (waypoint != null)
+        {
+            client.getRenderOverview().setWorldMapPositionTarget(waypoint.getWorldPoint());
+            playSoundEffect();
+        }
     }
 
     private WorldPoint calculateMapPoint(RenderOverview renderOverview, Point mousePos, float zoom)

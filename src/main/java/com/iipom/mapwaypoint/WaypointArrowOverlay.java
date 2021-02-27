@@ -31,10 +31,7 @@ public class WaypointArrowOverlay extends Overlay
         this.client = client;
         this.plugin = plugin;
 
-        spriteManager.getSpriteAsync(MINIMAP_GUIDE_ARROW_YELLOW, 1, sprite ->
-        {
-            ARROW_ICON = ImageUtil.rotateImage(sprite, 3 * Math.PI / 2);
-        });
+        spriteManager.getSpriteAsync(MINIMAP_GUIDE_ARROW_YELLOW, 1, sprite -> ARROW_ICON = ImageUtil.rotateImage(sprite, 3 * Math.PI / 2));
     }
 
     @Override
@@ -54,8 +51,17 @@ public class WaypointArrowOverlay extends Overlay
         final WorldPoint currentLocation = player.getWorldLocation();
         final WorldPoint destination = plugin.getWaypoint().getWorldPoint();
 
-        final int distance = currentLocation.distanceTo(destination);
-        final String steps = "Steps: " + distance;
+        String steps;
+
+        if (currentLocation.getPlane() == destination.getPlane())
+        {
+            final int distance = currentLocation.distanceTo(destination);
+            steps = "Steps: " + distance;
+        }
+        else
+        {
+            steps = "Different plane!";
+        }
 
         final BufferedImage arrow = calculateImageRotation(currentLocation, destination, graphics.getFontMetrics().stringWidth(steps));
 
