@@ -22,6 +22,7 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapOverlay;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -126,8 +127,7 @@ public class MapWaypointPlugin extends Plugin
                 final boolean insideClickbox = waypoint != null && waypoint.getClickbox().contains(mousePos.getX(), mousePos.getY());
 
                 MenuEntry[] menuEntries = client.getMenuEntries();
-                menuEntries = Arrays.copyOf(menuEntries, menuEntries.length + (insideClickbox  ? 2 : 1));
-                final MenuEntry point = menuEntries[menuEntries.length - (insideClickbox ? 2 : 1)] = new MenuEntry();
+                final MenuEntry point = new MenuEntry();
 
                 point.setOption(insideClickbox ? REMOVE : SET);
                 point.setTarget(WAYPOINT);
@@ -135,10 +135,30 @@ public class MapWaypointPlugin extends Plugin
 
                 if (insideClickbox)
                 {
-                    MenuEntry focus = menuEntries[menuEntries.length - 1] = new MenuEntry();
+                    MenuEntry focus = new MenuEntry();
                     focus.setOption(FOCUS);
                     focus.setTarget(WAYPOINT);
                     focus.setType(MenuAction.RUNELITE.getId());
+
+                    if (config.menuEntriesOnTop())
+                    {
+                        menuEntries = ArrayUtils.addAll(menuEntries, point, focus);
+                    }
+                    else
+                    {
+                        menuEntries = ArrayUtils.insert(0, menuEntries, point, focus);
+                    }
+                }
+                else
+                {
+                    if (config.menuEntriesOnTop())
+                    {
+                        menuEntries = ArrayUtils.add(menuEntries, point);
+                    }
+                    else
+                    {
+                        menuEntries = ArrayUtils.insert(0, menuEntries, point);
+                    }
                 }
 
                 client.setMenuEntries(menuEntries);

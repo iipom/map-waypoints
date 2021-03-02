@@ -46,4 +46,14 @@ public interface MapWaypointConfig extends Config {
     {
         return true;
     }
+
+    @ConfigItem(
+            keyName = "menuEntriesOnTop",
+            name = "Show menu entries on top",
+            description = "Disable this to fix menu entries drawing over some tooltips on the World Map"
+    )
+    default boolean menuEntriesOnTop()
+    {
+        return true;
+    }
 }
