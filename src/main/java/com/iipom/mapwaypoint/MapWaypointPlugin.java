@@ -37,18 +37,19 @@ import java.util.Arrays;
 public class MapWaypointPlugin extends Plugin
 {
     private static final String WALK_HERE = "Walk here";
-    private static final String FOCUS = "Focus";
     private static final String CLOSE = "Close";
-    private static final String SET_WAYPOINT = "Set Waypoint";
-    private static final String FOCUS_WAYPOINT = "Focus Waypoint";
-    private static final String REMOVE_WAYPOINT = "Remove Waypoint";
+    private static final String CANCEL = "Cancel";
+    private static final String SET = "Set";
+    private static final String FOCUS = "Focus";
+    private static final String REMOVE = "Remove";
+    private static final String WAYPOINT = "<col=ffff>Waypoint</col>";
 
     private static final BufferedImage WAYPOINT_ICON;
 
     static
     {
         WAYPOINT_ICON = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-        final BufferedImage waypointIcon = ImageUtil.getResourceStreamFromClass(MapWaypointPlugin.class, "waypoint.png");
+        final BufferedImage waypointIcon = ImageUtil.loadImageResource(MapWaypointPlugin.class, "waypoint.png");
         WAYPOINT_ICON.getGraphics().drawImage(waypointIcon, 0, 0, null);
     }
 
@@ -116,52 +117,56 @@ public class MapWaypointPlugin extends Plugin
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event)
     {
-        if (waypoint != null)
+        if (isMouseInWorldMap() && event.getOption().equals(CANCEL))
         {
-            if (event.getOption().equals(WALK_HERE))
+            try
             {
-                final Tile selectedSceneTile = client.getSelectedSceneTile();
-                if (selectedSceneTile == null)
+                final Point mousePos = client.getMouseCanvasPosition();
+
+                final boolean insideClickbox = waypoint != null && waypoint.getClickbox().contains(mousePos.getX(), mousePos.getY());
+
+                MenuEntry[] menuEntries = client.getMenuEntries();
+                menuEntries = Arrays.copyOf(menuEntries, menuEntries.length + (insideClickbox  ? 2 : 1));
+                final MenuEntry point = menuEntries[menuEntries.length - (insideClickbox ? 2 : 1)] = new MenuEntry();
+
+                point.setOption(insideClickbox ? REMOVE : SET);
+                point.setTarget(WAYPOINT);
+                point.setType(MenuAction.RUNELITE.getId());
+
+                if (insideClickbox)
                 {
-                    return;
+                    MenuEntry focus = menuEntries[menuEntries.length - 1] = new MenuEntry();
+                    focus.setOption(FOCUS);
+                    focus.setTarget(WAYPOINT);
+                    focus.setType(MenuAction.RUNELITE.getId());
                 }
 
-                if (selectedSceneTile.getWorldLocation().equals(waypoint.getWorldPoint()))
-                {
-                    addMenuEntry(event, REMOVE_WAYPOINT);
-                    return;
-                }
+                client.setMenuEntries(menuEntries);
+            }
+            catch (NullPointerException e)
+            {
+                // I'll figure out how to fix this someday
             }
         }
-
-        if (isMouseInWorldMap())
+        else if (config.drawTile() && waypoint != null && event.getOption().equals(WALK_HERE))
         {
-            if (event.getOption().equals(WALK_HERE))
+            final Tile selectedSceneTile = client.getSelectedSceneTile();
+            if (selectedSceneTile == null)
             {
                 return;
             }
 
-            final Point mousePos = client.getMouseCanvasPosition();
-            try
+            if (selectedSceneTile.getWorldLocation().equals(waypoint.getWorldPoint()))
             {
-                if (waypoint != null && waypoint.getClickbox().contains(mousePos.getX(), mousePos.getY()))
-                {
-                    if (!event.getOption().equals(FOCUS) && !event.getOption().equals(CLOSE))
-                    {
-                        addMenuEntry(event, REMOVE_WAYPOINT);
-                        addMenuEntry(event, FOCUS_WAYPOINT);
-                    }
-                }
-                else if (!event.getOption().equals(FOCUS) && !event.getOption().equals(CLOSE))
-                {
-                    addMenuEntry(event, SET_WAYPOINT);
-                }
-            }
-            catch (NullPointerException e)
-            {
-                // Nothing wrong actually happened here, this only ever gets thrown sometimes when you add a waypoint and it checks its clickbox while being created
-                // I added the try...catch so the users console doesn't get output from it because I'm not sure how to fix it
-                // I'm assuming it has something to do with the mouse already being positioned over the waypoint when it's created and the way Runelite/Runescape handles menu creation
+                MenuEntry[] menuEntries = client.getMenuEntries();
+                menuEntries = Arrays.copyOf(menuEntries, menuEntries.length + 1);
+                final MenuEntry point = menuEntries[menuEntries.length - 1] = new MenuEntry();
+
+                point.setOption(REMOVE);
+                point.setTarget(WAYPOINT);
+                point.setType(MenuAction.RUNELITE.getId());
+
+                client.setMenuEntries(menuEntries);
             }
         }
     }
@@ -169,20 +174,20 @@ public class MapWaypointPlugin extends Plugin
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event)
     {
-        if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() || !client.isMenuOpen())
+        if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() || !event.getMenuTarget().equals(WAYPOINT) || !client.isMenuOpen())
         {
             return;
         }
 
         switch (event.getMenuOption())
         {
-            case SET_WAYPOINT:
+            case SET:
                 setWaypoint(lastMenuOpenedPoint);
                 break;
-            case REMOVE_WAYPOINT:
+            case REMOVE:
                 removeWaypoint();
                 break;
-            case FOCUS_WAYPOINT:
+            case FOCUS:
                 focusWaypoint();
                 break;
         }
@@ -272,19 +277,6 @@ public class MapWaypointPlugin extends Plugin
 
         final Rectangle worldMapBounds = view.getBounds();
         return worldMapBounds.contains(mousePos.getX(), mousePos.getY());
-    }
-
-    private void addMenuEntry(MenuEntryAdded event, String option)
-    {
-        MenuEntry[] menuEntries = client.getMenuEntries();
-        menuEntries = Arrays.copyOf(menuEntries, menuEntries.length + 1);
-        final MenuEntry menuEntry = menuEntries[menuEntries.length - 1] = new MenuEntry();
-
-        menuEntry.setOption(option);
-        menuEntry.setTarget(event.getTarget());
-        menuEntry.setType(MenuAction.RUNELITE.getId());
-
-        client.setMenuEntries(menuEntries);
     }
 
     private void playSoundEffect()
